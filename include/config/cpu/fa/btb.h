@@ -1,0 +1,1 @@
+#define CONFIG_CPU_FA_BTB 1

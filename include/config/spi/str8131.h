@@ -1,0 +1,1 @@
+#define CONFIG_SPI_STR8131 1

@@ -1,0 +1,1 @@
+#define CONFIG_FAST_BRIDGE 1

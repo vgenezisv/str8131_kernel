@@ -1,0 +1,1 @@
+#define CONFIG_CPU_CACHE_FA 1

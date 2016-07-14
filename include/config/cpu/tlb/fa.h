@@ -1,0 +1,1 @@
+#define CONFIG_CPU_TLB_FA 1

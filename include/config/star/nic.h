@@ -1,0 +1,1 @@
+#define CONFIG_STAR_NIC 1

@@ -1,0 +1,1 @@
+#define CONFIG_STR8131_DMA 1

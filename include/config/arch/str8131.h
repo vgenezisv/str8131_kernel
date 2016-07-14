@@ -1,0 +1,1 @@
+#define CONFIG_ARCH_STR8131 1

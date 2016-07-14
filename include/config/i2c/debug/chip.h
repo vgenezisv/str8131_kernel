@@ -1,0 +1,1 @@
+#define CONFIG_I2C_DEBUG_CHIP 1

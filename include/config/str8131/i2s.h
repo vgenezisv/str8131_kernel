@@ -1,0 +1,1 @@
+#undef CONFIG_STR8131_I2S

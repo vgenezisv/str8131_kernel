@@ -1,0 +1,1 @@
+#define CONFIG_VIC_INTERRUPT 1

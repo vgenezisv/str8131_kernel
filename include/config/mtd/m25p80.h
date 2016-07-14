@@ -1,0 +1,1 @@
+#define CONFIG_MTD_M25P80 1

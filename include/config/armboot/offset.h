@@ -1,0 +1,1 @@
+#define CONFIG_ARMBOOT_OFFSET 0x0
