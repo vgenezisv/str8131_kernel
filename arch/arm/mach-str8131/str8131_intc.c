@@ -213,6 +213,7 @@ void __init str8131_init_irq(void)
 	for (i = 0; i < NR_IRQS;  i++) {
 		set_irq_chip(i, &str8131_irqchip);
 		set_irq_handler(i, do_level_IRQ);
+		// na: set_irq_handler(i, handle_level_irq);
 		set_irq_flags(i, IRQF_VALID | IRQF_PROBE);
 	}
 }

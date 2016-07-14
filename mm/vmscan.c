@@ -454,6 +454,9 @@ static int shrink_list(struct list_head *page_list, struct scan_control *sc)
 		if (PageWriteback(page))
 			goto keep_locked;
 
+		if (!PageReferenced(page))
+			inc_readahead_aging();
+
 		referenced = page_referenced(page, 1);
 		/* In active use or really unfreeable?  Activate it. */
 		if (referenced && page_mapping_inuse(page))

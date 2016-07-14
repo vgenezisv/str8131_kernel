@@ -1,5 +1,6 @@
 #include <linux/linkage.h>
 #include <asm/assembler.h>
+#include <asm/cache.h> /*new for L1_CACHE_SHIFT*/
 #include "abort-macro.S"
 /*
  * Function: v4t_early_abort
@@ -18,7 +19,8 @@
  * abort here if the I-TLB and D-TLB aren't seeing the same
  * picture.  Unfortunately, this does happen.  We live with it.
  */
-	.align	5
+	/*.align	5*/
+	.align L1_CACHE_SHIFT
 ENTRY(v4t_early_abort)
 	mrc	p15, 0, r1, c5, c0, 0		@ get FSR
 	mrc	p15, 0, r0, c6, c0, 0		@ get FAR

@@ -127,6 +127,8 @@ void fastcall mark_page_accessed(struct page *page)
 		ClearPageReferenced(page);
 	} else if (!PageReferenced(page)) {
 		SetPageReferenced(page);
+		if (PageLRU(page))
+			inc_readahead_aging();
 	}
 }
 

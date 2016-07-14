@@ -32,16 +32,7 @@
 #include <linux/bitops.h>
 
 
-#ifdef __KERNEL__
-#define RADIX_TREE_MAP_SHIFT	6
-#else
-#define RADIX_TREE_MAP_SHIFT	3	/* For more stressful testing */
-#endif
 #define RADIX_TREE_TAGS		2
-
-#define RADIX_TREE_MAP_SIZE	(1UL << RADIX_TREE_MAP_SHIFT)
-#define RADIX_TREE_MAP_MASK	(RADIX_TREE_MAP_SIZE-1)
-
 #define RADIX_TREE_TAG_LONGS	\
 	((RADIX_TREE_MAP_SIZE + BITS_PER_LONG - 1) / BITS_PER_LONG)
 
@@ -286,32 +277,89 @@ int radix_tree_insert(struct radix_tree_root *root,
 }
 EXPORT_SYMBOL(radix_tree_insert);
 
-static inline void **__lookup_slot(struct radix_tree_root *root,
-				   unsigned long index)
+/**
+ *	radix_tree_lookup_node    -    low level lookup routine
+ *	@root:		radix tree root
+ *	@index:		index key
+ *	@level:		stop at that many levels from the tree leaf
+ *
+ *	Lookup the item at the position @index in the radix tree @root.
+ *	The return value is:
+ *	@level == 0:      page at @index;
+ *	@level == 1:      the corresponding bottom level tree node;
+ *	@level < height:  (@level-1)th parent node of the bottom node
+ *			  that contains @index;
+ *	@level >= height: the root node.
+ */
+void *radix_tree_lookup_node(struct radix_tree_root *root,
+				unsigned long index, unsigned int level)
 {
 	unsigned int height, shift;
-	struct radix_tree_node **slot;
+	struct radix_tree_node *slot;
 
 	height = root->height;
 	if (index > radix_tree_maxindex(height))
 		return NULL;
 
 	shift = (height-1) * RADIX_TREE_MAP_SHIFT;
-	slot = &root->rnode;
+	slot = root->rnode;
 
-	while (height > 0) {
-		if (*slot == NULL)
+	while (height > level) {
+		if (slot == NULL)
 			return NULL;
 
-		slot = (struct radix_tree_node **)
-			((*slot)->slots +
-				((index >> shift) & RADIX_TREE_MAP_MASK));
+		slot = slot->slots[(index >> shift) & RADIX_TREE_MAP_MASK];
 		shift -= RADIX_TREE_MAP_SHIFT;
 		height--;
 	}
 
-	return (void **)slot;
+	return slot;
 }
+EXPORT_SYMBOL(radix_tree_lookup_node);
+
+/**
+ *	radix_tree_cache_lookup_node    -    cached lookup node
+ *	@root:		radix tree root
+ *	@cache:		look-aside cache
+ *	@index:		index key
+ *
+ *	Lookup the item at the position @index in the radix tree @root,
+ *	and return the node @level levels from the bottom in the search path.
+ *
+ *	@cache stores the last accessed upper level tree node by this
+ *	function, and is always checked first before searching in the tree.
+ *	It can improve speed for access patterns with strong locality.
+ *
+ *	NOTE:
+ *	- The cache becomes invalid on leaving the lock;
+ *	- Do not intermix calls with different @level.
+ */
+void *radix_tree_cache_lookup_node(struct radix_tree_root *root,
+				struct radix_tree_cache *cache,
+				unsigned long index, unsigned int level)
+{
+	struct radix_tree_node *node;
+        unsigned long i;
+        unsigned long mask;
+
+        if (level >= root->height)
+                return root->rnode;
+
+        i = ((index >> (level * RADIX_TREE_MAP_SHIFT)) & RADIX_TREE_MAP_MASK);
+        mask = ~((RADIX_TREE_MAP_SIZE << (level * RADIX_TREE_MAP_SHIFT)) - 1);
+
+	if ((index & mask) == cache->first_index)
+                return cache->tree_node->slots[i];
+
+	node = radix_tree_lookup_node(root, index, level + 1);
+	if (!node)
+		return 0;
+
+	cache->tree_node = node;
+	cache->first_index = (index & mask);
+        return node->slots[i];
+}
+EXPORT_SYMBOL(radix_tree_cache_lookup_node);
 
 /**
  *	radix_tree_lookup_slot    -    lookup a slot in a radix tree
@@ -323,25 +371,131 @@ static inline void **__lookup_slot(struct radix_tree_root *root,
  */
 void **radix_tree_lookup_slot(struct radix_tree_root *root, unsigned long index)
 {
-	return __lookup_slot(root, index);
+	struct radix_tree_node *node;
+
+	node = radix_tree_lookup_node(root, index, 1);
+	return node->slots + (index & RADIX_TREE_MAP_MASK);
 }
 EXPORT_SYMBOL(radix_tree_lookup_slot);
 
 /**
- *	radix_tree_lookup    -    perform lookup operation on a radix tree
+ *	radix_tree_cache_count    -    items in the cached node
+ *	@cache:      radix tree look-aside cache
+ *
+ *      Query the number of items contained in the cached node.
+ */
+unsigned int radix_tree_cache_count(struct radix_tree_cache *cache)
+{
+	if (!(cache->first_index & RADIX_TREE_MAP_MASK))
+		return cache->tree_node->count;
+	else
+		return 0;
+}
+EXPORT_SYMBOL(radix_tree_cache_count);
+
+/**
+ *	radix_tree_scan_hole_backward    -    scan backward for hole
  *	@root:		radix tree root
  *	@index:		index key
+ *	@max_scan:      advice on max items to scan (it may scan a little more)
  *
- *	Lookup the item at the position @index in the radix tree @root.
+ *      Scan backward from @index for a hole/empty item, stop when
+ *      - hit hole
+ *      - @max_scan or more items scanned
+ *      - hit index 0
+ *
+ *      Return the correponding index.
  */
-void *radix_tree_lookup(struct radix_tree_root *root, unsigned long index)
+unsigned long radix_tree_scan_hole_backward(struct radix_tree_root *root,
+				unsigned long index, unsigned long max_scan)
 {
-	void **slot;
+	struct radix_tree_cache cache;
+	struct radix_tree_node *node;
+	unsigned long origin;
+	int i;
 
-	slot = __lookup_slot(root, index);
-	return slot != NULL ? *slot : NULL;
+	origin = index;
+        radix_tree_cache_init(&cache);
+
+	while (origin - index < max_scan) {
+		node = radix_tree_cache_lookup_node(root, &cache, index, 1);
+		if (!node)
+			break;
+
+		if (node->count == RADIX_TREE_MAP_SIZE) {
+			index = (index - RADIX_TREE_MAP_SIZE) |
+					RADIX_TREE_MAP_MASK;
+			goto check_underflow;
+		}
+
+		for (i = index & RADIX_TREE_MAP_MASK; i >= 0; i--, index--) {
+			if (!node->slots[i])
+				goto out;
+		}
+
+check_underflow:
+		if (unlikely(index == ULONG_MAX)) {
+			index = 0;
+			break;
+		}
+	}
+
+out:
+	return index;
 }
-EXPORT_SYMBOL(radix_tree_lookup);
+EXPORT_SYMBOL(radix_tree_scan_hole_backward);
+
+/**
+ *	radix_tree_scan_hole    -    scan for hole
+ *	@root:		radix tree root
+ *	@index:		index key
+ *	@max_scan:      advice on max items to scan (it may scan a little more)
+ *
+ *      Scan forward from @index for a hole/empty item, stop when
+ *      - hit hole
+ *      - hit EOF
+ *      - hit index ULONG_MAX
+ *      - @max_scan or more items scanned
+ *
+ *      Return the correponding index.
+ */
+unsigned long radix_tree_scan_hole(struct radix_tree_root *root,
+				unsigned long index, unsigned long max_scan)
+{
+	struct radix_tree_cache cache;
+	struct radix_tree_node *node;
+	unsigned long origin;
+	int i;
+
+	origin = index;
+        radix_tree_cache_init(&cache);
+
+	while (index - origin < max_scan) {
+		node = radix_tree_cache_lookup_node(root, &cache, index, 1);
+		if (!node)
+			break;
+
+		if (node->count == RADIX_TREE_MAP_SIZE) {
+			index = (index | RADIX_TREE_MAP_MASK) + 1;
+			goto check_overflow;
+		}
+
+		for (i = index & RADIX_TREE_MAP_MASK; i < RADIX_TREE_MAP_SIZE;
+								i++, index++) {
+			if (!node->slots[i])
+				goto out;
+		}
+
+check_overflow:
+		if (unlikely(!index)) {
+			index = ULONG_MAX;
+			break;
+		}
+	}
+out:
+	return index;
+}
+EXPORT_SYMBOL(radix_tree_scan_hole);
 
 /**
  *	radix_tree_tag_set - set a tag on a radix tree node

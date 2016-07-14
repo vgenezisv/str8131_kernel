@@ -12,11 +12,13 @@
 #include <linux/linkage.h>
 #include <asm/assembler.h>
 #include <asm/asm-offsets.h>
+#include <asm/cache.h>
 
 #define COPY_COUNT (PAGE_SZ/64 PLD( -1 ))
 
 		.text
-		.align	5
+		/*.align	5*/
+		.align L1_CACHE_SHIFT
 /*
  * StrongARM optimised copy_page routine
  * now 1.78bytes/cycle, was 1.60 bytes/cycle (50MHz bus -> 89MB/s)

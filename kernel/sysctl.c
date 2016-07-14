@@ -73,6 +73,13 @@ extern int pid_max_min, pid_max_max;
 extern int sysctl_drop_caches;
 extern int percpu_pagelist_fraction;
 
+#if defined(CONFIG_ADAPTIVE_READAHEAD)
+extern int readahead_ratio;
+extern int readahead_hit_rate;
+static int one = 1;
+static int zero;
+#endif
+
 #if defined(CONFIG_X86_LOCAL_APIC) && defined(CONFIG_X86)
 int unknown_nmi_panic;
 extern int proc_unknown_nmi_panic(ctl_table *, int, struct file *,
@@ -681,6 +688,28 @@ static ctl_table kern_table[] = {
 		.maxlen		= sizeof (int),
 	 	.mode		= 0644,
 		.proc_handler	= &proc_dointvec,
+	},
+#endif
+#ifdef CONFIG_ADAPTIVE_READAHEAD
+	{
+		.ctl_name	= VM_READAHEAD_RATIO,
+		.procname	= "readahead_ratio",
+		.data		= &readahead_ratio,
+		.maxlen		= sizeof(readahead_ratio),
+		.mode		= 0644,
+		.proc_handler	= &proc_dointvec,
+		.strategy	= &sysctl_intvec,
+		.extra1		= &zero,
+	},
+	{
+		.ctl_name	= VM_READAHEAD_HIT_RATE,
+		.procname	= "readahead_hit_rate",
+		.data		= &readahead_hit_rate,
+		.maxlen		= sizeof(readahead_hit_rate),
+		.mode		= 0644,
+		.proc_handler	= &proc_dointvec,
+		.strategy	= &sysctl_intvec,
+		.extra1		= &one,
 	},
 #endif
 	{ .ctl_name = 0 }

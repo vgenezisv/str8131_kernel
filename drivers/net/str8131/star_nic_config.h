@@ -58,8 +58,11 @@
 #define STAR_NIC_DELAYED_INTERRUPT
 //#endif
 
-#define MAX_PEND_INT_CNT	0x20
-#define MAX_PEND_TIME		0x20
+//#define MAX_PEND_INT_CNT	0x20
+//#define MAX_PEND_TIME		0x20
+
+#define MAX_PEND_INT_CNT	0x10
+#define MAX_PEND_TIME		0x10
 
 #ifdef CONFIG_STAR_JUMBO
 #define MAX_PACKET_LEN		(2038)
@@ -75,9 +78,11 @@
  */
 #ifdef FREE_TX_SKB_MULTI
 #define STAR_NIC_MAX_TFD_NUM	256
+// test:bad iperf #define STAR_NIC_MAX_TFD_NUM	48
 #define STAR_NIC_MAX_RFD_NUM	256
 #else
 #define STAR_NIC_MAX_TFD_NUM	64
+// test:bad iperf #define STAR_NIC_MAX_TFD_NUM	48
 #define STAR_NIC_MAX_RFD_NUM	64
 #endif
 

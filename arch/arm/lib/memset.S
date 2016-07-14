@@ -11,9 +11,11 @@
  */
 #include <linux/linkage.h>
 #include <asm/assembler.h>
+#include <asm/cache.h> /*new for L1_CACHE_SHIFT*/
 
 	.text
-	.align	5
+	/*.align	5*/
+	.align L1_CACHE_SHIFT
 	.word	0
 
 1:	subs	r2, r2, #4		@ 1 do we have enough

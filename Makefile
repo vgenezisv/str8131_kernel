@@ -1,7 +1,7 @@
 VERSION = 2
 PATCHLEVEL = 6
 SUBLEVEL = 16
-EXTRAVERSION = -star
+EXTRAVERSION = -star34
 NAME=Sliding Snow Leopard
 
 # *DOCUMENTATION*
@@ -173,7 +173,11 @@ SUBARCH := $(shell uname -m | sed -e s/i.86/i386/ -e s/sun4u/sparc64/ \
 # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
 
 ARCH		?= arm
-CROSS_COMPILE	?= /opt/crosstool/gcc-3.3.6-glibc-2.3.2/arm-unknown-linux-gnu/bin/arm-unknown-linux-gnu-
+#CROSS_COMPILE	?= /opt/crosstool/gcc-3.3.6-glibc-2.3.2/arm-unknown-linux-gnu/bin/arm-unknown-linux-gnu-
+#CROSS_COMPILE	?= /opt/crosstool/gcc-3.3.6-glibc-2.3.2/arm-fa526-linux-gnu/bin/arm-fa526-linux-gnu-
+#CROSS_COMPILE	?= /opt/codesourcery/arm-2009q1/bin/arm-none-linux-gnueabi-
+CROSS_COMPILE ?= /opt/codesourcery/arm-2010q1/bin/arm-none-eabi-
+#CROSS_COMPILE	?= /opt/crosstool/arm-uclibc-3.4.6/bin/arm-linux-uclibc-
 
 # Architecture as present in compile.h
 UTS_MACHINE := $(ARCH)
@@ -532,6 +536,9 @@ CFLAGS += $(call cc-option,-Wdeclaration-after-statement,)
 
 # disable pointer signedness warnings in gcc 4.0
 CFLAGS += $(call cc-option,-Wno-pointer-sign,)
+
+#gcc extra optimization
+CFLAGS += $(call cc-option,-funit-at-a-time,)
 
 # Default kernel image to build when no specific target is given.
 # KBUILD_IMAGE may be overruled on the commandline or

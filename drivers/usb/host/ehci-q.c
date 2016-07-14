@@ -787,6 +787,11 @@ static void qh_link_async (struct ehci_hcd *ehci, struct ehci_qh *qh)
 		if (!(cmd & CMD_ASE)) {
 			/* in case a clear of CMD_ASE didn't take yet */
 			(void) handshake (&ehci->regs->status, STS_ASS, 0, 150);
+			// EXPERIMENTAL
+			/* force async head to be valid */
+			writel ((u32)ehci->async->qh_dma,
+					&ehci->regs->async_next);			
+			
 			cmd |= CMD_ASE | CMD_RUN;
 			writel (cmd, &ehci->regs->command);
 			ehci_to_hcd(ehci)->state = HC_STATE_RUNNING;

@@ -186,6 +186,8 @@ enum
 	VM_PERCPU_PAGELIST_FRACTION=30,/* int: fraction of pages in each percpu_pagelist */
 	VM_ZONE_RECLAIM_MODE=31, /* reclaim local zone memory before going off node */
 	VM_ZONE_RECLAIM_INTERVAL=32, /* time period to wait after reclaim failure */
+	VM_READAHEAD_RATIO=35,	/* percent of read-ahead size to thrashing-threshold */
+	VM_READAHEAD_HIT_RATE=36, /* one accessed page legitimizes so many read-ahead pages */
 };
 
 

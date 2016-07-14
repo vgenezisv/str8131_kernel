@@ -23,10 +23,22 @@
 #include <linux/preempt.h>
 #include <linux/types.h>
 
+#define RADIX_TREE_MAP_SHIFT	6
+#define RADIX_TREE_MAP_SIZE	(1UL << RADIX_TREE_MAP_SHIFT)
+#define RADIX_TREE_MAP_MASK	(RADIX_TREE_MAP_SIZE-1)
+
 struct radix_tree_root {
 	unsigned int		height;
 	gfp_t			gfp_mask;
 	struct radix_tree_node	*rnode;
+};
+
+/*
+ * Lookaside cache to support access patterns with strong locality.
+ */
+struct radix_tree_cache {
+	unsigned long first_index;
+	struct radix_tree_node *tree_node;
 };
 
 #define RADIX_TREE_INIT(mask)	{					\
@@ -46,9 +58,18 @@ do {									\
 } while (0)
 
 int radix_tree_insert(struct radix_tree_root *, unsigned long, void *);
-void *radix_tree_lookup(struct radix_tree_root *, unsigned long);
-void **radix_tree_lookup_slot(struct radix_tree_root *, unsigned long);
+void *radix_tree_lookup_node(struct radix_tree_root *, unsigned long,
+							unsigned int);
+void **radix_tree_lookup_slot(struct radix_tree_root *root, unsigned long);
 void *radix_tree_delete(struct radix_tree_root *, unsigned long);
+unsigned int radix_tree_cache_count(struct radix_tree_cache *cache);
+void *radix_tree_cache_lookup_node(struct radix_tree_root *root,
+				struct radix_tree_cache *cache,
+				unsigned long index, unsigned int level);
+unsigned long radix_tree_scan_hole_backward(struct radix_tree_root *root,
+				unsigned long index, unsigned long max_scan);
+unsigned long radix_tree_scan_hole(struct radix_tree_root *root,
+				unsigned long index, unsigned long max_scan);
 unsigned int
 radix_tree_gang_lookup(struct radix_tree_root *root, void **results,
 			unsigned long first_index, unsigned int max_items);
@@ -68,6 +89,63 @@ int radix_tree_tagged(struct radix_tree_root *root, int tag);
 static inline void radix_tree_preload_end(void)
 {
 	preempt_enable();
+}
+
+/**
+ *	radix_tree_lookup    -    perform lookup operation on a radix tree
+ *	@root:		radix tree root
+ *	@index:		index key
+ *
+ *	Lookup the item at the position @index in the radix tree @root.
+ */
+static inline void *radix_tree_lookup(struct radix_tree_root *root,
+							unsigned long index)
+{
+	return radix_tree_lookup_node(root, index, 0);
+}
+
+/**
+ *	radix_tree_cache_init    -    init a look-aside cache
+ *	@cache:		look-aside cache
+ *
+ *	Init the radix tree look-aside cache @cache.
+ */
+static inline void radix_tree_cache_init(struct radix_tree_cache *cache)
+{
+	cache->first_index = RADIX_TREE_MAP_MASK;
+	cache->tree_node = NULL;
+}
+
+/**
+ *	radix_tree_cache_lookup    -    cached lookup on a radix tree
+ *	@root:		radix tree root
+ *	@cache:		look-aside cache
+ *	@index:		index key
+ *
+ *	Lookup the item at the position @index in the radix tree @root,
+ *	and make use of @cache to speedup the lookup process.
+ */
+static inline void *radix_tree_cache_lookup(struct radix_tree_root *root,
+						struct radix_tree_cache *cache,
+						unsigned long index)
+{
+	return radix_tree_cache_lookup_node(root, cache, index, 0);
+}
+
+static inline unsigned int radix_tree_cache_size(struct radix_tree_cache *cache)
+{
+	return RADIX_TREE_MAP_SIZE;
+}
+
+static inline int radix_tree_cache_full(struct radix_tree_cache *cache)
+{
+	return radix_tree_cache_count(cache) == radix_tree_cache_size(cache);
+}
+
+static inline unsigned long
+radix_tree_cache_first_index(struct radix_tree_cache *cache)
+{
+	return cache->first_index;
 }
 
 #endif /* _LINUX_RADIX_TREE_H */

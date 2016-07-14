@@ -168,6 +168,7 @@ void __devinit calibrate_delay(void)
 			loops_per_jiffy/(500000/HZ),
 			(loops_per_jiffy/(5000/HZ)) % 100,
 			loops_per_jiffy);
+		//printk(
 	}
 
 }

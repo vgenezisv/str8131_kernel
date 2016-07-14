@@ -1,1 +1,1 @@
-#define CONFIG_BUG 1
+#undef CONFIG_BUG

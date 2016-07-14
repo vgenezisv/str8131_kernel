@@ -70,17 +70,20 @@ int dirty_background_ratio = 10;
  * The generator of dirty data starts writeback at this percentage
  */
 int vm_dirty_ratio = 40;
+// tested bad: int vm_dirty_ratio = 33;
 
 /*
  * The interval between `kupdate'-style writebacks, in centiseconds
  * (hundredths of a second)
  */
 int dirty_writeback_centisecs = 5 * 100;
+// tested bad: int dirty_writeback_centisecs = 3 * 100;
 
 /*
  * The longest number of centiseconds for which data is allowed to remain dirty
  */
 int dirty_expire_centisecs = 30 * 100;
+// tested bad: int dirty_expire_centisecs = 15 * 100;
 
 /*
  * Flag that makes the machine dump writes/reads and block dirtyings.
@@ -370,7 +373,7 @@ static void wb_timer_fn(unsigned long unused);
 static void laptop_timer_fn(unsigned long unused);
 
 static DEFINE_TIMER(wb_timer, wb_timer_fn, 0, 0);
-static DEFINE_TIMER(laptop_mode_wb_timer, laptop_timer_fn, 0, 0);
+DEFINE_TIMER(laptop_mode_wb_timer, laptop_timer_fn, 0, 0);
 
 /*
  * Periodic writeback of "old" data.

@@ -77,6 +77,7 @@
 #define PG_buddy		19	/* Page is free, on buddy lists */
 
 #define PG_uncached		20	/* Page has been mapped as uncached */
+#define PG_readahead	20	/* Reminder to do readahead */
 
 /*
  * Global page accounting.  One instance per CPU.  Only unsigned longs are
@@ -349,6 +350,10 @@ extern void __mod_page_state_offset(unsigned long offset, unsigned long delta);
 #define PageUncached(page)	test_bit(PG_uncached, &(page)->flags)
 #define SetPageUncached(page)	set_bit(PG_uncached, &(page)->flags)
 #define ClearPageUncached(page)	clear_bit(PG_uncached, &(page)->flags)
+
+#define PageReadahead(page)	test_bit(PG_readahead, &(page)->flags)
+#define __SetPageReadahead(page) __set_bit(PG_readahead, &(page)->flags)
+#define TestClearPageReadahead(page) test_and_clear_bit(PG_readahead, &(page)->flags)
 
 struct page;	/* forward declaration */
 

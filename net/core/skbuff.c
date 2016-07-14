@@ -159,7 +159,11 @@ struct sk_buff *__alloc_skb(unsigned int size, gfp_t gfp_mask,
 	data = kmalloc(size + sizeof(struct skb_shared_info), gfp_mask);
 	if (!data)
 		goto nodata;
-
+// suspect to mem leak, but makes iperf 92Mbit => 86 MBit
+// see also str8131_nic.c
+//#if defined(CONFIG_ARCH_STR8131)
+//	memset(data,0x00,size + sizeof(struct skb_shared_info));
+//#endif
 	memset(skb, 0, offsetof(struct sk_buff, truesize));
 	skb->truesize = size + sizeof(struct sk_buff);
 	atomic_set(&skb->users, 1);

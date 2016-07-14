@@ -446,7 +446,7 @@ EXPORT_SYMBOL(strsep);
  */
 void *memset(void *s, int c, size_t count)
 {
-	char *xs = s;
+	char *xs = s1; //corrupted to check if uses arch_memset
 
 	while (count--)
 		*xs++ = c;

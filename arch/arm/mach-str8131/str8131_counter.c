@@ -167,7 +167,7 @@ str8131_counter_write_proc(struct file *file, const char __user *buffer,
 		if (!cmd) goto err_out;
 		if (strcmp(cmd, "match1") == 0) {
 			u32 addr;
-			u32 vir_addr;
+			// old: u32 vir_addr;
 			char *arg = strsep(&str, "\t \n");
 			if (!arg) goto err_out;
 			addr = simple_strtoul(arg, &arg, 10);
@@ -175,7 +175,7 @@ str8131_counter_write_proc(struct file *file, const char __user *buffer,
 
 		} else if (strcmp(cmd, "match2") == 0) {
 			u32 addr;
-			u32 vir_addr;
+			// old: u32 vir_addr;
 			char *arg = strsep(&str, "\t \n");
 			if (!arg) goto err_out;
 			addr = simple_strtoul(arg, &arg, 10);

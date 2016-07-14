@@ -49,6 +49,7 @@
 #include <asm/mach/map.h>
 #include <asm/setup.h>
 #include <asm/system.h>
+#include <asm/cache.h> /*new for L1_CACHE_SHIFT*/
 #include <asm/memory.h>
 #include <asm/hardware.h>
 #include <asm/mach-types.h>
@@ -350,7 +351,7 @@ static struct platform_device str8131_usb20_device = {
 	.resource	= str8131_usb20_resources,
 	.num_resources	= ARRAY_SIZE(str8131_usb20_resources),
 };
-
+// RootFS: sector 34-126
 #ifdef CONFIG_SPI_STR8131
 #if defined(CONFIG_MTD_M25P80) || defined(CONFIG_MTD_M25P80_MODULE)
 static struct mtd_partition str8131_spi_flash_partitions[] = {
@@ -367,7 +368,7 @@ static struct mtd_partition str8131_spi_flash_partitions[] = {
 		.offset =	0x00040000,
 		.size =		0x1e0000,
 	},{
-		.name =		"RootFS",
+		.name =		"RootFS", 
 		.offset =	0x00220000,
 		.size =		0x5d0000,
 	},{
@@ -487,6 +488,8 @@ void __init str8131_early_init(void)
 	printk("CPU clock at %dMHz\n", CPU_clock / 1000000);
 	printk("AHB clock at %dMHz\n", AHB_clock / 1000000);
 	printk("APB clock at %dMHz\n", APB_clock / 1000000);
+	printk("CPU cache shift %d\n", L1_CACHE_SHIFT);
+	printk("Cache line size: %d\n", L1_CACHE_BYTES);
 }
 /* ######################################################################### */
 

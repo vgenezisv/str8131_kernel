@@ -600,19 +600,40 @@ struct fown_struct {
  * Track a single file's readahead state
  */
 struct file_ra_state {
-	unsigned long start;		/* Current window */
-	unsigned long size;
-	unsigned long flags;		/* ra flags RA_FLAG_xxx*/
-	unsigned long cache_hit;	/* cache hit count*/
-	unsigned long prev_page;	/* Cache last read() position */
-	unsigned long ahead_start;	/* Ahead window */
-	unsigned long ahead_size;
-	unsigned long ra_pages;		/* Maximum readahead window */
-	unsigned long mmap_hit;		/* Cache hit stat for mmap accesses */
-	unsigned long mmap_miss;	/* Cache miss stat for mmap accesses */
+	union {
+		struct { /* conventional read-ahead */
+			unsigned long start;		/* Current window */
+			unsigned long size;
+			unsigned long ahead_start;	/* Ahead window */
+			unsigned long ahead_size;
+			unsigned long cache_hit;        /* cache hit count */
+		};
+#ifdef CONFIG_ADAPTIVE_READAHEAD
+		struct { /* adaptive read-ahead */
+			pgoff_t la_index;
+			pgoff_t ra_index;
+			pgoff_t lookahead_index;
+			pgoff_t readahead_index;
+			unsigned long age;
+			uint64_t cache_hits;
+		};
+#endif
+	};
+
+	/* mmap read-around */
+	unsigned long mmap_hit;         /* Cache hit stat for mmap accesses */
+	unsigned long mmap_miss;        /* Cache miss stat for mmap accesses */
+
+	/* common ones */
+	unsigned long flags;            /* ra flags RA_FLAG_xxx*/
+	unsigned long prev_page;        /* Cache last read() position */
+	unsigned long ra_pages;         /* Maximum readahead window */
 };
 #define RA_FLAG_MISS 0x01	/* a cache miss occured against this file */
 #define RA_FLAG_INCACHE 0x02	/* file is already in cache */
+#define RA_FLAG_MMAP		(1UL<<31)	/* mmaped page access */
+#define RA_FLAG_NO_LOOKAHEAD	(1UL<<30)	/* disable look-ahead */
+#define RA_FLAG_NFSD		(1UL<<29)	/* request from nfsd */
 
 struct file {
 	/*

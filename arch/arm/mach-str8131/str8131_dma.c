@@ -162,7 +162,8 @@ static int dma_job_q_init(void)
 		(DMA_XFER_MAX_Q_LEN * MAX_DMA_VEC * sizeof(dma_llp_descr_t)),
 	       	&dma_mem_pool_dma);
 
-	if (dma_mem_pool == NULL) {
+	/*if (dma_mem_pool == NULL) {*/
+	if (unlikely(!dma_mem_pool)){
 		return -1;
 	}
 
@@ -270,7 +271,7 @@ void dma_dump_reg(void)
 
 static inline void dma_copy_busy_wait(void *dst, const void *src, size_t len, unsigned long dma_len_shift)
 {
-	int err = 0;
+	//int err = 0;
 	int i;
 
 	len = (len >> dma_len_shift);
@@ -292,28 +293,28 @@ static inline void dma_copy_busy_wait(void *dst, const void *src, size_t len, un
 
 	for (i = 0; i < DMA_COPY_BUSY_WAIT_LOOP; i++) {
 		if (DMAC_TC_STATUS_REG & (1 << DMA_COPY_BUSY_WAIT_CHANNEL)) {
-			break;
+			// disable the channel
+			DMAC_CH_CSR_REG(DMA_COPY_BUSY_WAIT_CHANNEL) &= ~0x1;
+			// clear the TC status
+			DMAC_INT_TC_STATUS_CLR_REG |= (1 << DMA_COPY_BUSY_WAIT_CHANNEL);			
+			return;
 		}
 		if (DMAC_ERR_STATUS_REG & (1 << DMA_COPY_BUSY_WAIT_CHANNEL)) {
-			err = 1;
-			break;
+			// disable the channel
+			DMAC_CH_CSR_REG(DMA_COPY_BUSY_WAIT_CHANNEL) &= ~0x1;
+			// clear the ERROR status
+			DMAC_INT_ERR_STATUS_CLR_REG |= (1 << DMA_COPY_BUSY_WAIT_CHANNEL);
+			// do usual copy without DMA
+			memcpy(dst, src, (len << dma_len_shift));
+			return;
 		}
 		udelay(1);
 	}
 
 	// disable the channel
 	DMAC_CH_CSR_REG(DMA_COPY_BUSY_WAIT_CHANNEL) &= ~0x1;
-
-	if (err || (i == DMA_COPY_BUSY_WAIT_LOOP)) {
-		if (err) {
-			// clear the ERROR status
-			DMAC_INT_ERR_STATUS_CLR_REG |= (1 << DMA_COPY_BUSY_WAIT_CHANNEL);
-		}
-		memcpy(dst, src, (len << dma_len_shift));
-	} else {
-		// clear the TC status
-		DMAC_INT_TC_STATUS_CLR_REG |= (1 << DMA_COPY_BUSY_WAIT_CHANNEL);
-	}
+	//if (i == DMA_COPY_BUSY_WAIT_LOOP)) {
+	memcpy(dst, src, (len << dma_len_shift));
 }
 
 void dma_memcpy_busy_wait(void *dst, const void *src, size_t len)
@@ -389,7 +390,8 @@ void dma_copy(dma_xfer_t *dma_xfer)
 		return;
 	}
 
-	memset(dma_job->llp_descr, 0, (dma_xfer->nr_vec * sizeof(dma_llp_descr_t)));
+	//memset(dma_job->llp_descr, 0, (dma_xfer->nr_vec * sizeof(dma_llp_descr_t)));
+	__memzero(dma_job->llp_descr, (dma_xfer->nr_vec * sizeof(dma_llp_descr_t)));
 	for (i = 0; i < dma_xfer->nr_vec; i++) {
 		consistent_sync((void *)dma_xfer->vec[i].src_addr, dma_xfer->vec[i].size, PCI_DMA_TODEVICE);
 		consistent_sync((void *)dma_xfer->vec[i].dst_addr, dma_xfer->vec[i].size, PCI_DMA_FROMDEVICE);
@@ -466,7 +468,7 @@ static void dma_process_xfer_job(void *data)
 			if (dma_running_job[i] != NULL) {
 				continue;
 			}
-			printk("Insert dma xfer to channel(%d)\n", i);
+			//printk("Insert dma xfer to channel(%d)\n", i);
 			list_del_init(&dma_job->lh);
 			dma_running_job[i] = dma_job;
 			dma_xfer_q_len--;
@@ -665,7 +667,8 @@ static int __init str8131_dma_init(void)
 
 	printk("STR8131 DMA driver init\n");
 	retval = dma_init();
-#ifdef STR8131_DMA_TEST
+//#ifdef STR8131_DMA_TEST
+#if 0
 	if (retval == 0) {
 		static int str8131_dmacopy_busywait_test(void);
 		static int str8131_dmacopy_llp_test(void);

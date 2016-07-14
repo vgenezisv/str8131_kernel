@@ -953,7 +953,11 @@ extern int filemap_populate(struct vm_area_struct *, unsigned long,
 int write_one_page(struct page *page, int wait);
 
 /* readahead.c */
+#ifdef CONFIG_ADAPTIVE_READAHEAD
+#define VM_MAX_READAHEAD	1024	/* kbytes */
+#else
 #define VM_MAX_READAHEAD	128	/* kbytes */
+#endif
 #define VM_MIN_READAHEAD	16	/* kbytes (includes current page) */
 #define VM_MAX_CACHE_HIT    	256	/* max pages in a row in cache before
 					 * turning readahead off */
@@ -970,6 +974,33 @@ unsigned long page_cache_readahead(struct address_space *mapping,
 void handle_ra_miss(struct address_space *mapping, 
 		    struct file_ra_state *ra, pgoff_t offset);
 unsigned long max_sane_readahead(unsigned long nr);
+unsigned long
+page_cache_readahead_adaptive(struct address_space *mapping,
+			struct file_ra_state *ra, struct file *filp,
+			struct page *prev_page, struct page *page,
+			pgoff_t first_index, pgoff_t index, pgoff_t last_index);
+
+#ifdef CONFIG_ADAPTIVE_READAHEAD
+void fastcall readahead_cache_hit(struct file_ra_state *ra, struct page *page);
+extern int readahead_ratio;
+#else
+#define readahead_cache_hit(ra, page) do { } while (0)
+#define readahead_ratio 1
+#endif /* CONFIG_ADAPTIVE_READAHEAD */
+
+static inline int prefer_adaptive_readahead(void)
+{
+	return readahead_ratio >= 10;
+}
+
+DECLARE_PER_CPU(unsigned long, readahead_aging);
+static inline void inc_readahead_aging(void)
+{
+	if (prefer_adaptive_readahead()) {
+		per_cpu(readahead_aging, get_cpu())++;
+		put_cpu();
+	}
+}
 
 /* Do stack extension */
 extern int expand_stack(struct vm_area_struct *vma, unsigned long address);

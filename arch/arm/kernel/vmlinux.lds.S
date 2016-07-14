@@ -7,6 +7,7 @@
 #include <linux/config.h>
 #include <asm/thread_info.h>
 #include <asm/memory.h>
+#include <asm/cache.h>
 	
 OUTPUT_ARCH(arm)
 ENTRY(stext)

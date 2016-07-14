@@ -1,1 +1,1 @@
-#define CONFIG_ELF_CORE 1
+#undef CONFIG_ELF_CORE

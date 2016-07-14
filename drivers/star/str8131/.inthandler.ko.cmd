@@ -1,0 +1,1 @@
+cmd_drivers/star/str8131/inthandler.ko := /opt/codesourcery/arm-2010q1/bin/arm-none-eabi-ld -EL  -r -o drivers/star/str8131/inthandler.ko drivers/star/str8131/inthandler.o drivers/star/str8131/inthandler.mod.o

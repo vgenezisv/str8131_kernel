@@ -1,1 +1,1 @@
-#define CONFIG_XFS_FS 1
+#undef CONFIG_XFS_FS

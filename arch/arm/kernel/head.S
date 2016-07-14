@@ -23,6 +23,7 @@
 #include <asm/memory.h>
 #include <asm/thread_info.h>
 #include <asm/system.h>
+#include <asm/cache.h>
 
 #define PROCINFO_MMUFLAGS	8
 #define PROCINFO_INITFUNC	12
@@ -229,7 +230,8 @@ __enable_mmu:
  *
  * other registers depend on the function called upon completion
  */
-	.align	5
+	/*.align	5*/
+	.align L1_CACHE_SHIFT
 	.type	__turn_mmu_on, %function
 __turn_mmu_on:
 	mov	r0, r0

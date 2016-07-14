@@ -10,9 +10,11 @@
 #include <linux/linkage.h>
 #include <asm/assembler.h>
 #include <asm/errno.h>
+#include <asm/cache.h> /*new for L1_CACHE_SHIFT*/
 
 	.text
-	.align	5
+	/*.align	5*/
+	.align L1_CACHE_SHIFT
 
 /*
  * Copy a string from user space to kernel space.

@@ -107,7 +107,8 @@ static void star_nic_timer_func(unsigned long data)
 	txsd_index = (txsd_current - (u32)txring.phy_addr) >> 4;
 	if (txsd_index > txring.to_free_index) {
 		skb_free_count = txsd_index - txring.to_free_index;
-	} else if (txsd_index <= txring.to_free_index) {
+	/*} else if (txsd_index <= txring.to_free_index) {*/
+	} else {
 		skb_free_count = STAR_NIC_MAX_TFD_NUM + txsd_index - txring.to_free_index;
 	}
 	for (i = 0; i < skb_free_count; i++) {
@@ -581,7 +582,8 @@ static int star_nic_phy_config(struct net_device *dev)
 	phy_config &= ~(0x1 << 16);
 
 	// config PHY LED bit[13:12]
-	star_nic_read_phy(priv->phy_addr, 31, &phy_config);
+	// old: star_nic_read_phy(priv->phy_addr, 31, &phy_config);
+	star_nic_read_phy(priv->phy_addr, 31, (u16 *)(&phy_config));
 	phy_config &= ~(0x3 << 12); // clear LED control
 	phy_config |= FE_PHY_LED_MODE;
 	star_nic_write_phy(priv->phy_addr, 31, phy_config);
@@ -1067,7 +1069,7 @@ static char *star_nic_status_tbl[] = {
 IRQ_RETURN star_nic_status_isr(int irq, void *dev_id, struct pt_regs *regs)
 {
 	u32 int_status;
-	u32 i;
+	//u32 i;
 #ifdef CONFIG_PM
 	extern int nic_suspended;
 	u32 nic_suspended_tmp=nic_suspended;
@@ -1087,12 +1089,14 @@ IRQ_RETURN star_nic_status_isr(int irq, void *dev_id, struct pt_regs *regs)
 		str8131_nic_resume();
 	}
 #endif
-
+// disable printkas
+#if 0
 	for (i = 0; i < 5; i++) {
 		if (int_status & (1 << i)) {
 			DO_PRINT(star_nic_status_tbl[i]);
 		}
 	}
+#endif
 
 	HAL_NIC_CLEAR_INTERRUPT_STATUS_SOURCES(int_status);
 #ifdef CONFIG_PM
@@ -1222,6 +1226,7 @@ static int star_nic_close(struct net_device *dev)
 	return 0;
 }
 
+#if 0
 static inline struct sk_buff *star_nic_alloc_skb(void)
 {
 	struct sk_buff *skb;
@@ -1241,6 +1246,7 @@ static inline struct sk_buff *star_nic_alloc_skb(void)
 
 	return skb;
 }
+#endif
 
 static void __init star_nic_buffer_free(void)
 {
@@ -1293,12 +1299,15 @@ static int __init star_nic_buffer_alloc(void)
 		if (i == (STAR_NIC_MAX_RFD_NUM - 1)) { 
 			rxdesc_ptr->eor = 1;	// End bit == 0;
 		}
-		skb_ptr = star_nic_alloc_skb();
-		if (!skb_ptr) {
+		// old: skb_ptr = star_nic_alloc_skb();
+		skb_ptr = dev_alloc_skb(MAX_PACKET_LEN + 2);
+		if (unlikely(!skb_ptr)) {
 			printk("ERROR: Allocate skb Failed!\n");
 			err = -ENOMEM;
 			goto err_out;
 		}
+		// new vnv: skb_reserve
+		skb_reserve(skb_ptr, 2);
 		// Trans Packet from Virtual Memory to Physical Memory
 		rxring.skb_ptr[i]	= skb_ptr;
 		rxdesc_ptr->data_ptr	= (u32)virt_to_phys(skb_ptr->data);
@@ -1506,26 +1515,29 @@ void star_nic_receive_packet(int mode)
 			break;
 		++(*work_done);
 #endif
-		if (rxdesc_ptr->cown != 0) {
+		//if (rxdesc_ptr->cown != 0) {
 			// Alloc New skb_buff 
-			skb_ptr = star_nic_alloc_skb();
+			// old: skb_ptr = star_nic_alloc_skb();
+			skb_ptr = dev_alloc_skb(MAX_PACKET_LEN + 2);
 			// Check skb_buff
-			if (skb_ptr != NULL) {
+			if (unlikely(!skb_ptr)) {
+				// TODO:
+				// I will add dev->lp.stats->rx_dropped, it will effect the performance
+				printk("%s: Alloc sk_buff fail, reuse the buffer\n", __FUNCTION__);
+				rxdesc_ptr->cown	= 0; // set cbit to 0 for CPU Transfer	
+				return;
+			} else {
+				// new vnv: skb_reserve
+				skb_reserve(skb_ptr, 2);
 				star_nic_get_rfd_buff(rxring.cur_index);
 				rxring.skb_ptr[rxring.cur_index] = skb_ptr;
 				rxdesc_ptr->data_ptr	= (u32)virt_to_phys(skb_ptr->data);
 				rxdesc_ptr->length	= MAX_PACKET_LEN;	
 				rxdesc_ptr->cown	= 0; // set cbit to 0 for CPU Transfer	
-			} else {
-				// TODO:
-				// I will add dev->lp.stats->rx_dropped, it will effect the performance
-				DBG_PRINT("%s: Alloc sk_buff fail, reuse the buffer\n", __FUNCTION__);
-				rxdesc_ptr->cown	= 0; // set cbit to 0 for CPU Transfer	
-				return;
 			}
-		} else {
+		//} else {
 			//printk("[KC_DEBUG] star_nic_receive_packet() encounter COWN==0 BUG\n");
-		}
+		//}
 
 		if (rxring.cur_index == (STAR_NIC_MAX_RFD_NUM - 1)) {
 			rxring.cur_index	= 0;
@@ -1594,7 +1606,8 @@ static int star_nic_send_packet(struct sk_buff *skb, struct net_device *dev)
 
 	if (tssd_index > txring.to_free_index) {
 		skb_free_count = tssd_index - txring.to_free_index;
-	} else if (tssd_index <= txring.to_free_index) {
+	/*} else if (tssd_index <= txring.to_free_index) {*/
+	} else {
 		skb_free_count = STAR_NIC_MAX_TFD_NUM + tssd_index - txring.to_free_index;
 	}
 
@@ -1667,7 +1680,10 @@ static int star_nic_send_packet(struct sk_buff *skb, struct net_device *dev)
 	txdesc_ptr->data_ptr			= virt_to_phys(skb->data);
 	if ((nr_frags == 0) && (len < PKT_MIN_SIZE)) {
 		txdesc_ptr->length		= PKT_MIN_SIZE;
-		memset(skb->data + len, 0x00, PKT_MIN_SIZE - len);
+		// old: memset(skb->data + len, 0x00, PKT_MIN_SIZE - len);
+		// suspect to mem leak see also skbuff.c
+		//memset(skb->data + len, 0x00, PKT_MIN_SIZE - len);
+		__memzero(skb->data + len, PKT_MIN_SIZE - len);
 	} else {
 		txdesc_ptr->length		= len;
 	}
@@ -1738,7 +1754,10 @@ static int star_nic_send_packet(struct sk_buff *skb, struct net_device *dev)
 	txdesc_ptr->data_ptr			= virt_to_phys(skb->data);
 	if (skb->len < PKT_MIN_SIZE) {
 		txdesc_ptr->length		= PKT_MIN_SIZE;
-		memset(skb->data + skb->len, 0x00, PKT_MIN_SIZE - skb->len);
+		// old: memset(skb->data + skb->len, 0x00, PKT_MIN_SIZE - skb->len);
+		// suspect to mem leak
+		// memset(skb->data + skb->len, 0x00, PKT_MIN_SIZE - skb->len);
+		__memzero(skb->data + skb->len, PKT_MIN_SIZE - skb->len);
 	} else {
 		txdesc_ptr->length		= skb->len;
 	}
@@ -1839,7 +1858,10 @@ sendpacket_exit:
 	txdesc_ptr->data_ptr			= virt_to_phys(skb->data);
 	if (skb->len < PKT_MIN_SIZE) {
 		txdesc_ptr->length		= PKT_MIN_SIZE;
-		memset(skb->data + skb->len, 0x00, PKT_MIN_SIZE - skb->len);
+		// old: memset(skb->data + skb->len, 0x00, PKT_MIN_SIZE - skb->len);
+		// suspect to mem leak
+		// memset(skb->data + skb->len, 0x00, PKT_MIN_SIZE - skb->len);
+		__memzero(skb->data + skb->len, PKT_MIN_SIZE - skb->len);
 	} else {
 		txdesc_ptr->length		= skb->len;
 	}
@@ -2193,6 +2215,7 @@ static int __init star_nic_init_module(void)
 #else
 	printk("%s: scatter/gather disabled.\n",__FUNCTION__);
 #endif
+	printk("MAX_PEND_INT_CNT:%d\n",MAX_PEND_INT_CNT);
 	printk("\n");
 
 #ifdef STAR_NIC_TIMER
@@ -2596,7 +2619,7 @@ static void wp3220ac_phystate(int port, int link, int speed)
  *=============================================================*/
 static void eth3220ac_10m_agc(void)
 {
-        u32 phy_config;
+        // old: u32 phy_config;
 
 	/* Force 10M AGC = 2c globally */
 	star_nic_write_phy(0, 31, 0x2f1a);
@@ -2608,7 +2631,7 @@ static void eth3220ac_10m_agc(void)
 static void eth3220ac_dfe_init(void)
 {
 	int i;
-	u32 phy_config;
+	// old: u32 phy_config;
 
 	star_nic_write_phy(0, 31, 0x2f1a);
 	for (i=0; i <= 7; i++)
@@ -2620,7 +2643,7 @@ static void eth3220ac_dfe_init(void)
 static void eth3220ac_phy_cdr_training_init(void)
 {
 	int volatile i;
-	u32 phy_config;
+	// old: u32 phy_config;
 
 	/* Force all port in 10M FD mode */
 	for (i=0; i < NUM_PHY; i++)

@@ -9,6 +9,7 @@
  */
 #include <linux/config.h>
 #include <linux/linkage.h>
+#include <asm/cache.h> /*new for L1_CACHE_SHIFT*/
 
 /*
  * Debugging stuff
@@ -337,7 +338,8 @@ params:		ldr	r0, =params_phys
  * This routine must preserve:
  *  r4, r5, r6, r7, r8
  */
-		.align	5
+		/*old: .align	5*/
+		.align L1_CACHE_SHIFT
 cache_on:	mov	r3, #8			@ cache_on function
 		b	call_cache_fn
 
@@ -442,7 +444,8 @@ __common_cache_on:
  * r8     = atags pointer
  * r9-r14 = corrupted
  */
-		.align	5
+		/* old: .align	5*/
+		.align L1_CACHE_SHIFT
 reloc_start:	add	r9, r5, r0
 		debug_reloc_start
 		mov	r1, r4
@@ -600,7 +603,8 @@ proc_types:
  * On exit,   r0, r1, r2, r3, r12 corrupted
  * This routine must preserve: r4, r6, r7
  */
-		.align	5
+		/*.align	5*/
+		.align L1_CACHE_SHIFT
 cache_off:	mov	r3, #12			@ cache_off function
 		b	call_cache_fn
 
@@ -643,7 +647,8 @@ __armv3_cache_off:
  * This routine must preserve:
  *  r0, r4, r5, r6, r7
  */
-		.align	5
+		/*.align	5*/
+		.align L1_CACHE_SHIFT
 cache_clean_flush:
 		mov	r3, #16
 		b	call_cache_fn

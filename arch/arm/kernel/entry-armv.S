@@ -20,6 +20,7 @@
 #include <asm/glue.h>
 #include <asm/vfpmacros.h>
 #include <asm/arch/entry-macro.S>
+#include <asm/cache.h>
 
 #include "entry-header.S"
 
@@ -146,7 +147,8 @@ common_invalid:
 	stmia	r5, {r0 - r4}
 	.endm
 
-	.align	5
+	/*.align	5*/
+	.align L1_CACHE_SHIFT
 __dabt_svc:
 	svc_entry
 
@@ -193,7 +195,8 @@ __dabt_svc:
 	msr	spsr_cxsf, r0
 	ldmia	sp, {r0 - pc}^			@ load r0 - pc, cpsr
 
-	.align	5
+	/*.align	5*/
+	.align L1_CACHE_SHIFT
 __irq_svc:
 	svc_entry
 
@@ -239,7 +242,8 @@ svc_preempt:
 	b	1b
 #endif
 
-	.align	5
+	/*.align	5*/
+	.align L1_CACHE_SHIFT
 __und_svc:
 	svc_entry
 
@@ -269,7 +273,8 @@ __und_svc:
 	msr	spsr_cxsf, lr
 	ldmia	sp, {r0 - pc}^			@ Restore SVC registers
 
-	.align	5
+	/*.align	5*/
+	.align L1_CACHE_SHIFT
 __pabt_svc:
 	svc_entry
 
@@ -303,7 +308,8 @@ __pabt_svc:
 	msr	spsr_cxsf, r0
 	ldmia	sp, {r0 - pc}^			@ load r0 - pc, cpsr
 
-	.align	5
+	/*.align	5*/
+	.align L1_CACHE_SHIFT
 .LCcralign:
 	.word	cr_alignment
 #ifdef MULTI_ABORT
@@ -371,7 +377,8 @@ __pabt_svc:
 	zero_fp
 	.endm
 
-	.align	5
+	/*.align	5*/
+	.align L1_CACHE_SHIFT
 __dabt_usr:
 	usr_entry
 
@@ -400,7 +407,8 @@ __dabt_usr:
 	adr	lr, ret_from_exception
 	b	do_DataAbort
 
-	.align	5
+	/*.align	5*/
+	.align L1_CACHE_SHIFT
 __irq_usr:
 	usr_entry
 
@@ -424,7 +432,8 @@ __irq_usr:
 
 	.ltorg
 
-	.align	5
+	/*.align	5*/
+	.align L1_CACHE_SHIFT
 __und_usr:
 	usr_entry
 
@@ -540,7 +549,8 @@ fpundefinstr:
 	adr	lr, ret_from_exception
 	b	do_undefinstr
 
-	.align	5
+	/*.align	5*/
+	.align L1_CACHE_SHIFT
 __pabt_usr:
 	usr_entry
 
@@ -639,7 +649,8 @@ ENTRY(__switch_to)
  * purpose.
  */
 
-	.align	5
+	/*.align	5*/
+	.align L1_CACHE_SHIFT
 	.globl	__kuser_helper_start
 __kuser_helper_start:
 
@@ -682,7 +693,8 @@ __kuser_memory_barrier:				@ 0xffff0fa0
 #endif
 	mov	pc, lr
 
-	.align	5
+	/*.align	5*/
+	.align L1_CACHE_SHIFT
 
 /*
  * Reference prototype:
@@ -801,7 +813,8 @@ __kuser_cmpxchg:				@ 0xffff0fc0
 
 #endif
 
-	.align	5
+	/*.align	5*/
+	.align L1_CACHE_SHIFT
 
 /*
  * Reference prototype:
@@ -888,7 +901,8 @@ __kuser_helper_end:
  * of which is copied into r0 for the mode specific abort handler.
  */
 	.macro	vector_stub, name, mode, correction=0
-	.align	5
+	/*.align	5*/
+	.align L1_CACHE_SHIFT
 
 vector_\name:
 	.if \correction
@@ -925,7 +939,8 @@ __stubs_start:
  * Interrupt dispatcher
  */
 #if defined(CONFIG_CPU_FA_IDLE)||defined(CONFIG_PM)
-	.align	5
+	/*.align	5*/
+	.align L1_CACHE_SHIFT
 
 vector_irq:
 	sub	lr, lr, #4
@@ -1062,7 +1077,8 @@ update_lr:
 	.long	__und_invalid			@  e
 	.long	__und_invalid			@  f
 
-	.align	5
+	/*.align	5*/
+	.align L1_CACHE_SHIFT
 
 /*=============================================================================
  * Undefined FIQs
@@ -1092,7 +1108,8 @@ vector_addrexcptn:
  * We group all the following data together to optimise
  * for CPUs with separate I & D caches.
  */
-	.align	5
+	/*.align	5*/
+	.align L1_CACHE_SHIFT
 
 .LCvswi:
 	.word	vector_swi

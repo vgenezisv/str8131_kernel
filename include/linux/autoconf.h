@@ -1,7 +1,7 @@
 /*
  * Automatically generated C config: don't edit
- * Linux kernel version: 2.6.16-star
- * Fri May  6 21:42:40 2016
+ * Linux kernel version: 2.6.16-star34
+ * Fri Jun 17 21:38:28 2016
  */
 #define AUTOCONF_INCLUDED
 #define CONFIG_ARM 1
@@ -68,8 +68,8 @@
 #undef CONFIG_KALLSYMS_EXTRA_PASS
 #define CONFIG_HOTPLUG 1
 #define CONFIG_PRINTK 1
-#define CONFIG_BUG 1
-#define CONFIG_ELF_CORE 1
+#undef CONFIG_BUG
+#undef CONFIG_ELF_CORE
 #define CONFIG_BASE_FULL 1
 #define CONFIG_FUTEX 1
 #define CONFIG_EPOLL 1
@@ -188,6 +188,8 @@
 #define CONFIG_FLAT_NODE_MEM_MAP 1
 #undef CONFIG_SPARSEMEM_STATIC
 #define CONFIG_SPLIT_PTLOCK_CPUS 4096
+#define CONFIG_ADAPTIVE_READAHEAD 1
+#undef CONFIG_DEBUG_READAHEAD
 #define CONFIG_ALIGNMENT_TRAP 1
 
 /*
@@ -674,25 +676,7 @@
 /*
  * Wireless LAN (non-hamradio)
  */
-#define CONFIG_NET_RADIO 1
-
-/*
- * Obsolete Wireless cards support (pre-802.11)
- */
-#undef CONFIG_STRIP
-
-/*
- * Wireless 802.11b ISA/PCI cards support
- */
-#undef CONFIG_HERMES
-#undef CONFIG_ATMEL
-
-/*
- * Prism GT/Duette 802.11(a/b/g) PCI/Cardbus support
- */
-#undef CONFIG_PRISM54
-#undef CONFIG_HOSTAP
-#define CONFIG_NET_WIRELESS 1
+#undef CONFIG_NET_RADIO
 
 /*
  * Wan interfaces
@@ -948,7 +932,7 @@
  * USB Device Class drivers
  */
 #undef CONFIG_USB_ACM
-#define CONFIG_USB_PRINTER 1
+#undef CONFIG_USB_PRINTER
 
 /*
  * NOTE: USB_STORAGE enables SCSI, and 'SCSI disk support'
@@ -1002,7 +986,6 @@
 #undef CONFIG_USB_PEGASUS
 #undef CONFIG_USB_RTL8150
 #undef CONFIG_USB_USBNET
-#undef CONFIG_USB_ZD1201
 #define CONFIG_USB_MON 1
 
 /*
@@ -1059,11 +1042,7 @@
 #undef CONFIG_REISERFS_FS
 #undef CONFIG_JFS_FS
 #define CONFIG_FS_POSIX_ACL 1
-#define CONFIG_XFS_FS 1
-#undef CONFIG_XFS_QUOTA
-#undef CONFIG_XFS_SECURITY
-#undef CONFIG_XFS_POSIX_ACL
-#undef CONFIG_XFS_RT
+#undef CONFIG_XFS_FS
 #undef CONFIG_OCFS2_FS
 #undef CONFIG_MINIX_FS
 #undef CONFIG_ROMFS_FS
@@ -1085,12 +1064,9 @@
  */
 #define CONFIG_FAT_FS 1
 #define CONFIG_MSDOS_FS 1
-#define CONFIG_VFAT_FS 1
+#undef CONFIG_VFAT_FS
 #define CONFIG_FAT_DEFAULT_CODEPAGE 437
-#define CONFIG_FAT_DEFAULT_IOCHARSET "iso8859-1"
-#define CONFIG_NTFS_FS 1
-#undef CONFIG_NTFS_DEBUG
-#undef CONFIG_NTFS_RW
+#undef CONFIG_NTFS_FS
 
 /*
  * Pseudo filesystems
@@ -1222,7 +1198,6 @@
 #undef CONFIG_MAGIC_SYSRQ
 #undef CONFIG_DEBUG_KERNEL
 #define CONFIG_LOG_BUF_SHIFT 14
-#undef CONFIG_DEBUG_BUGVERBOSE
 #define CONFIG_FRAME_POINTER 1
 #undef CONFIG_DEBUG_USER
 
