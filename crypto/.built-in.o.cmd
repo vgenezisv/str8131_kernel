@@ -1,1 +1,0 @@
-cmd_crypto/built-in.o :=  /opt/codesourcery/arm-2010q1/bin/arm-none-eabi-ld -EL   -r -o crypto/built-in.o crypto/api.o crypto/scatterwalk.o crypto/cipher.o crypto/digest.o crypto/compress.o crypto/proc.o crypto/sha1.o crypto/arc4.o

@@ -1,1 +1,0 @@
-cmd_drivers/serial/built-in.o :=  /opt/codesourcery/arm-2010q1/bin/arm-none-eabi-ld -EL   -r -o drivers/serial/built-in.o drivers/serial/serial_core.o drivers/serial/8250.o drivers/serial/8250_pci.o drivers/serial/8250_early.o
